@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+Resources:
+
+  APIGateway:
+    Type: 'AWS::Serverless::Api'
+    Properties:
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: !Sub 's3://uthairat-sam-bucket/api-gateway-swagger.yml'
+      StageName: version1
+      EndpointConfiguration: REGIONAL
+
+  LambdaExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - apigateway.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: lambdapolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+
+  SearchingRestaurantFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs8.10
+      Timeout: 10
+      Role: !GetAtt
+        - LambdaExecutionRole
+        - Arn
+      Events:
+        SearchRestaurantAPI:
+          Type: Api
+          Properties:
+            RestApiId: !Ref APIGateway
+            Path: /search
+            Method: GET
+
+Outputs:
+  APIGatewayEndpoint:
+    Description: "API version1 stage endpoint"
+    Value: !Sub "https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/version1/search"

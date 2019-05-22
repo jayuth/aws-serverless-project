@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Page Title</title>
+    <link rel="shortcut icon" type="image/png" href="food-icon.png"/>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script type="text/javascript">
+
+        function getLocation() {
+            let geolocation = navigator.geolocation;
+            geolocation.getCurrentPosition(showLocation, errorHandler);
+        }
+
+        function showLocation(position) {
+            let latitude = position.coords.latitude;
+            let longitude = position.coords.longitude;
+            findRestaurant(latitude, longitude);
+        }
+
+        function errorHandler( err ) {
+            if (err.code == 1) {
+                console.log('PERMISSION_DENIED');
+            }
+        }
+
+        function findRestaurant(latitude, longitude) {
+            const restaurantType = "chinese";
+            let restaurantList = [];
+            let name = '';
+
+            $.ajax({
+                url : "https://s634zoh0d3.execute-api.us-east-1.amazonaws.com/version1/search",
+                type : 'GET',
+                headers: { 'userlatitude': latitude,
+                    'userlongitude': longitude,
+                    'userrestaurant': restaurantType
+                },
+                // JSON returned from Lambda function
+            }).done(function(data){
+                if(data){
+                    restaurantList.push(data);
+                    console.log('Data: ', restaurantList);
+                    // Loops through to get each restaurant's details
+                    for(let i=0; i<restaurantList[0].restaurant.length; i++){
+                        name += '<p>' + (i+1) + '. ' + restaurantList[0].restaurant[i].name
+                            + ',' + ' rating: ' + restaurantList[0].restaurant[i].rating
+                            + ',' + ' distance: ' + restaurantList[0].restaurant[i].distance + '</p>';
+                    }
+                    document.getElementById('title').innerHTML = 'Restaurant list:';
+                    document.getElementById('restaurant').innerHTML = name;
+                } else{
+                    document.getElementById('title').innerHTML = 'Something went wrong.';
+                }
+            });
+        }
+        getLocation();
+    </script>
+</head>
+<body>
+<p id="title"></p>
+<p id="restaurant"></p>
+</body>
+</html>

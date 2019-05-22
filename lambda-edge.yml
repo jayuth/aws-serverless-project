@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+Resources:
+  S3BucketCFLogs:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: uthairat-cf-logs
+
+  CFDistribution:
+    Type: 'AWS::CloudFront::Distribution'
+    Properties:
+      DistributionConfig:
+        Enabled: 'true'
+        Comment: Lambda@Edge SAM Sample
+        Origins:
+          -
+            CustomOriginConfig:
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+            DomainName: s634zoh0d3.execute-api.us-east-1.amazonaws.com
+            Id: MyOrigin
+        DefaultCacheBehavior:
+          TargetOriginId: MyOrigin
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          ViewerProtocolPolicy: redirect-to-https
+          ForwardedValues:
+            QueryString: 'false'
+            Headers:
+              - userlatitude
+              - userlongitude
+              - userrestaurant
+          LambdaFunctionAssociations:
+            -
+              EventType: origin-request
+              LambdaFunctionARN: !Ref LambdaEdgeFunction.Version
+        Logging:
+          Bucket: !GetAtt S3BucketCFLogs.DomainName
+
+  LambdaEdgeFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs8.10
+      Role: !GetAtt
+        - LambdaEdgeFunctionRole
+        - Arn
+      AutoPublishAlias: live
+
+  LambdaEdgeFunctionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - edgelambda.amazonaws.com
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: lambdalogs
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+
+Outputs:
+  CFDistribution:
+    Description: Cloudfront Distribution Domain Name
+    Value: !GetAtt
+      - CFDistribution
+      - DomainName
+  LambdaEdgeFunction:
+    Description: Lambda@Edge Function ARN
+    Value: !GetAtt
+      - LambdaEdgeFunction
+      - Arn
