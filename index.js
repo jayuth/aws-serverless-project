@@ -5,8 +5,8 @@ console.log('Loading event');
 const yelp = require('yelp-fusion');
 const distance = require('google-distance-matrix');
 
-const yelpAPIKey = 'a0lWKbJR4P4o5o_nsLacOTqhbdeh3YgQ752QAysky6ztxu1KNLEg0Hr_RVMRptaAb74Ai3o0DZ5pr65uKg392YXRJ4FBX1CH8lebaTlOziXII4yAOjeET3Kl8TZPXHYx';
-const googleAPIKey = 'AIzaSyAIGmFmCS9Qxr5Gk3jLE91l6oKngs7tweY';
+const yelpAPIKey = 'your_yelp_api_key';
+const googleAPIKey = 'your_google_api_key';
 
 async function getDistance (currentLat, currentLong, businessLat, businessLong){
     let origins = [`${currentLat},${currentLong}`];
